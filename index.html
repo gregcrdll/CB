@@ -9,15 +9,14 @@
 <body class="bg-gradient-to-b from-gray-900 to-gray-800 text-white min-h-screen p-6">
   <div class="max-w-6xl mx-auto px-6 sm:px-8 md:px-12 lg:px-16 xl:px-24">
     <h1 class="text-4xl font-extrabold mb-8 text-center text-blue-400 tracking-tight">Domestic Violence Charge Evaluator</h1>
+
     <div class="bg-gray-800 p-8 rounded-2xl shadow-2xl space-y-8 border border-blue-700">
       <label for="household" class="block text-lg font-semibold">Victim's Relationship (Household Member Type):</label>
       <select id="household" class="w-full p-3 border rounded shadow bg-gray-900 text-white">
         <option value="none">-- Select --</option>
-        <option value="spouse">Spouse or ex-spouse</option>
-        <option value="cohabitant">Cohabitant</option>
-        <option value="child">Child or step-child</option>
-        <option value="parent">Parent or step-parent</option>
-        <option value="sharedChild">Co-parent (share a child in common)</option>
+        <option value="spouse">Spouse or Former Spouse</option>
+        <option value="cohabitant">Persons Who Are Cohabiting or Formerly Cohabited</option>
+        <option value="childInCommon">Persons Who Have a Child in Common</option>
       </select>
 
       <label for="incidentInput" class="block text-lg font-semibold">Describe the Incident:</label>
@@ -58,6 +57,89 @@
 
     <button onclick="clearForm()" class="mt-4 w-full bg-red-600 text-white p-3 rounded shadow hover:bg-red-700 text-lg font-semibold">🗑️ Clear Form</button>
   </div>
-<script src="app.js"></script>
+
+<script>
+function classifyFromOfficerMode() {
+  const incident = document.getElementById("incidentInput").value.toLowerCase();
+  const household = document.getElementById("household").value;
+  const factors = Array.from(document.getElementById("aggravators").selectedOptions).map(o => o.value);
+  const resultBox = document.getElementById("resultBox");
+  const result = document.getElementById("result");
+  const explanation = document.getElementById("explanation");
+
+  if (!incident || household === "none") {
+    result.innerText = "Please complete all fields above.";
+    explanation.innerText = "";
+    resultBox.classList.remove("hidden");
+    return;
+  }
+
+  let charge = "Domestic Violence 3rd Degree";
+  let reasons = [];
+
+  if (factors.includes("priorDV2") || factors.includes("priorDVHAN")) {
+    charge = "Domestic Violence 1st Degree";
+    reasons.push("Two or more prior DV convictions or prior DVHAN conviction");
+  } else if (factors.includes("seriousInjury") || factors.includes("indifference") || factors.includes("strangulation")) {
+    charge = "Domestic Violence of a High and Aggravated Nature (DVHAN)";
+    reasons.push("Serious bodily injury or circumstances showing extreme indifference to human life");
+  } else if (
+    factors.includes("weapon") ||
+    factors.includes("minor") ||
+    factors.includes("protection") ||
+    factors.includes("pregnant") ||
+    factors.includes("firearmPresent") ||
+    factors.includes("releaseViolation") ||
+    factors.includes("priorDV1") ||
+    factors.includes("kidnapping") ||
+    factors.includes("protractedLoss") ||
+    factors.includes("interference911")
+  ) {
+    charge = "Domestic Violence 2nd Degree";
+    reasons.push("One or more aggravating factors present");
+  }
+
+  result.innerText = charge;
+  explanation.innerHTML = "<strong>Reasoning:</strong> " + reasons.join(", ");
+  resultBox.classList.remove("hidden");
+}
+
+function clearForm() {
+  document.getElementById("incidentInput").value = "";
+  document.getElementById("household").value = "none";
+  document.getElementById("aggravators").selectedIndex = -1;
+  document.getElementById("resultBox").classList.add("hidden");
+}
+
+// Voice input setup
+const voiceBtn = document.getElementById("voiceBtn");
+const voiceOutput = document.getElementById("voiceOutput");
+const recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+if (recognition) {
+  const recog = new recognition();
+  recog.continuous = false;
+  recog.lang = "en-US";
+  recog.interimResults = false;
+  recog.maxAlternatives = 1;
+
+  voiceBtn.onclick = () => {
+    recog.start();
+    voiceOutput.innerText = "Listening...";
+  };
+
+  recog.onresult = (event) => {
+    const transcript = event.results[0][0].transcript;
+    document.getElementById("incidentInput").value = transcript;
+    voiceOutput.innerText = "Heard: " + transcript;
+  };
+
+  recog.onerror = (event) => {
+    voiceOutput.innerText = "Error: " + event.error;
+  };
+} else {
+  voiceOutput.innerText = "Voice input not supported in this browser.";
+}
+</script>
+
 </body>
 </html>
