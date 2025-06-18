@@ -67,7 +67,7 @@ const aggravators = [
 ];
 
 const threatKeywords = ["threaten to kill", "said i’ll kill", "going to kill", "i will shoot", "i'm gonna shoot"];
-const threatAbility = ["holding gun", "had knife", "armed", "pointed weapon", "wielding weapon"];
+const threatAbility = ["holding gun", "had knife", "armed", "pointed weapon", "wielding weapon", "near firearm", "standing next to gun"];
 
 function classifyDV() {
   const input = document.getElementById("incidentInput").value.toLowerCase();
@@ -106,11 +106,19 @@ function classifyDV() {
   }
 
   if (match(threatKeywords)) {
-    reasons.push("Detected credible threat consistent with DV 1st under §16-25-20(A)(2).");
-    result = statutes.DV1st.title;
-    cite = statutes.DV1st.citation;
-    text = statutes.DV1st.text;
-    score = Math.max(score, 3);
+    if (match(threatAbility)) {
+      reasons.push("Detected threat to kill with proximity to weapon — extreme indifference present.");
+      result = statutes.DVHAN.title;
+      cite = statutes.DVHAN.citation;
+      text = statutes.DVHAN.text;
+      score = 4;
+    } else {
+      reasons.push("Detected credible threat consistent with DV 1st under §16-25-20(A)(2)." );
+      result = statutes.DV1st.title;
+      cite = statutes.DV1st.citation;
+      text = statutes.DV1st.text;
+      score = Math.max(score, 3);
+    }
   }
 
   aggravators.forEach(factor => {
